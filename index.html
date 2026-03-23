@@ -19,10 +19,16 @@
         .tab.active { background: #333; color: #fff; border-bottom: 2px solid var(--accent); }
         .tab-content { display: none; flex-direction: column; }
         .tab-content.active { display: flex; }
+        
         .search-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
         input { flex: 1; background: #333; color: #fff; border: 1px solid #444; border-radius: 8px; padding: 12px; font-size: 16px; outline: none; }
         .btn-search { background: #555; color: #fff; border: none; border-radius: 8px; padding: 12px 20px; font-weight: bold; cursor: pointer; height: 46px; }
-        .game-list { max-height: 280px; overflow-y: auto; background: #1a1917; border-radius: 8px; border: 1px solid #333; margin-top: 5px; }
+        
+        /* New Filter Row Styles */
+        .filter-row { display: flex; gap: 5px; margin-bottom: 10px; justify-content: space-between; }
+        .filter-row select { flex: 1; background: #333; color: #fff; border: 1px solid #444; border-radius: 6px; padding: 8px; font-size: 12px; appearance: none; text-align: center; }
+
+        .game-list { max-height: 280px; overflow-y: auto; background: #1a1917; border-radius: 8px; border: 1px solid #333; margin-top: 5px; width: 100%; }
         .game-card { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #222; cursor: pointer; transition: 0.1s; gap: 12px; position: relative; width: 100%; }
         .game-card.selected { background: rgba(129, 182, 76, 0.15); border-left: 5px solid var(--accent); }
         .gc-avatar { width: 44px; height: 44px; background: #444; border-radius: 6px; overflow: hidden; flex-shrink: 0; border: 1px solid #555; display: flex; align-items: center; justify-content: center; position: relative; }
@@ -36,15 +42,22 @@
         .loss { background: rgba(179, 52, 48, 0.2); color: #b33430; border: 1px solid #b33430; }
         .sel-icon { color: #81b64c; font-size: 16px; display: none; }
         .game-card.selected .sel-icon { display: inline; }
+        
         .depth-select { width: 100%; padding: 14px; margin-top: 15px; background: #333; color: #fff; border: 1px solid #444; border-radius: 10px; font-size: 14px; appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 12px center; background-size: 18px; cursor: pointer; }
         .run-btn { width: 100%; padding: 16px; background: var(--accent); border: none; color: white; font-weight: bold; border-radius: 10px; cursor: pointer; font-size: 18px; margin-top: 15px; box-shadow: 0 4px 0 #5d8b33; }
-        #statusMsg { color: #ffaa00; font-size: 13px; margin: 10px 0; text-align: center; font-weight: bold; min-height: 1.2em; }
+        
+        #statusMsg { color: #ffaa00; font-size: 13px; margin: 10px 0; text-align: center; font-weight: bold; }
         #prog-wrap { display: none; height: 10px; background: #111; border-radius: 5px; overflow: hidden; margin-top: 5px; }
         #prog-fill { height: 100%; width: 0%; background: var(--accent); transition: width 0.1s linear; }
+        
         #review-screen { display: none; width: 100%; flex-direction: column; gap: 10px; }
-        .acc-panel { display: flex; justify-content: space-between; background: #302e2b; padding: 12px; border-radius: 8px; font-weight: bold; }
-        .acc-box { background: #444; padding: 4px 10px; border-radius: 4px; }
-        .acc-w { background: #f1f1f1; color: #000; }
+        .accuracy-header { display: flex; width: 100%; background: #302e2b; border-radius: 10px; overflow: hidden; padding: 4px; gap: 4px; box-shadow: 0 4px 8px rgba(0,0,0,0.4); }
+        .acc-pill { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 8px 0; border-radius: 6px; }
+        .acc-pill.white-p { background: #f1f1f1; color: #000; }
+        .acc-pill.black-p { background: #444; color: #fff; }
+        .acc-val { font-size: 22px; font-weight: 900; line-height: 1; }
+        .acc-label { font-size: 10px; font-weight: bold; text-transform: uppercase; margin-top: 4px; opacity: 0.7; }
+        
         .coach { display: flex; align-items: flex-end; gap: 10px; }
         .bubble { background: #fff; color: #000; padding: 12px 15px; border-radius: 20px; border-bottom-left-radius: 2px; flex: 1; font-weight: bold; font-size: 14px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
         .board-box { display: flex; gap: 10px; width: 100%; }
@@ -56,12 +69,15 @@
         .ribbon { display: flex; overflow-x: auto; background: #302e2b; padding: 12px; border-radius: 8px; gap: 10px; min-height: 48px; scroll-behavior: smooth; }
         .m-item { color: #888; cursor: pointer; white-space: nowrap; padding: 6px 10px; border-radius: 4px; font-size: 14px; }
         .m-item.active { color: #fff; background: #444; border-bottom: 3px solid var(--accent); }
-        .move-badge { position: absolute; width: 24px; height: 24px; border-radius: 50%; color: #fff; font-weight: bold; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; transform: translate(-25%, -25%); box-shadow: 0 2px 6px rgba(0,0,0,0.6); }
+        
+        .move-badge { position: absolute; width: 22px; height: 22px; border-radius: 50%; color: #fff; font-weight: bold; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; transform: translate(-50%, -50%); box-shadow: 0 2px 6px rgba(0,0,0,0.6); z-index: 200; }
         .c-brilliant { background: #15d1ba; color: #000; } .c-great { background: #5c8bb0; } .c-best { background: #95bb4a; }
         .c-good { background: #96af8b; } .c-inaccuracy { background: #f0c15c; color: #000; } .c-mistake { background: #e6912c; } .c-blunder { background: #b33430; }
         [data-square] { position: relative; } .selected-square { background-color: rgba(129, 182, 76, 0.5) !important; }
         .legal-dot::after { content: ""; position: absolute; top: 50%; left: 50%; width: 26%; height: 26%; background: rgba(0,0,0,0.2); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
         .legal-cap::after { content: ""; position: absolute; top: 50%; left: 50%; width: 80%; height: 80%; border: 6px solid rgba(0,0,0,0.2); border-radius: 50%; transform: translate(-50%, -50%); box-sizing: border-box; pointer-events: none; }
+        
+        .btn-secondary { width: 100%; padding: 12px; background: #444; border: none; color: #ccc; font-weight: bold; border-radius: 8px; margin-top: 15px; cursor: pointer; transition: 0.2s; border: 1px solid #555; }
     </style>
 </head>
 <body>
@@ -73,7 +89,17 @@
             <button class="tab" id="t-pgn" onclick="setTab('pgn')">Paste PGN</button>
         </div>
         <div id="p-api" class="tab-content active">
-            <div class="search-row"><input type="text" id="userInput" placeholder="Username" value="MinnalManithan"><button onclick="apiFetch()" class="btn-search">Search</button></div>
+            <div class="search-row">
+                <input type="text" id="userInput" placeholder="Username" value="MinnalManithan">
+                <button onclick="apiFetch()" class="btn-search">Search</button>
+            </div>
+            <div class="filter-row">
+                <select id="fYear"></select>
+                <select id="fMonth"></select>
+                <select id="fDay">
+                    <option value="all">Any Day</option>
+                </select>
+            </div>
             <div class="game-list" id="glBox" style="display: none;"></div>
         </div>
         <div id="p-pgn" class="tab-content"><textarea id="pgnInput" placeholder="Paste PGN here..."></textarea></div>
@@ -82,26 +108,54 @@
         <div id="statusMsg">Ready to analyze.</div>
         <div id="prog-wrap"><div id="prog-fill"></div></div>
     </div>
+
     <div id="review-screen">
-        <div class="acc-panel"><div>White <span class="acc-box acc-w" id="wa-text">100</span>%</div><div><span class="acc-box" id="ba-text">100</span>% Black</div></div>
+        <div class="accuracy-header">
+            <div class="acc-pill white-p"><span class="acc-val" id="wa-text">100</span><span class="acc-label">White Acc</span></div>
+            <div class="acc-pill black-p"><span class="acc-val" id="ba-text">100</span><span class="acc-label">Black Acc</span></div>
+        </div>
         <div class="coach"><div style="font-size:45px;">👨🏽‍🏫</div><div class="bubble" id="coach-text">Ready.</div></div>
-        <div class="board-box"><div id="board-wrapper"><div id="board"></div><div id="badge-layer"></div></div><div class="eval-bar"><div class="efill" id="ef"></div><div class="enum" id="en" style="bottom:4px;">0.0</div></div></div>
+        <div class="board-box">
+            <div id="board-wrapper"><div id="board"></div><div id="badge-layer"></div></div>
+            <div class="eval-bar"><div class="efill" id="ef"></div><div class="enum" id="en" style="bottom:4px;">0.0</div></div>
+        </div>
         <div class="ribbon" id="rib"></div>
-        <div style="display: flex; gap: 10px;"><button class="run-btn" style="background:#444; box-shadow:0 4px 0 #222;" onclick="nav(-1)">Prev</button><button class="run-btn" onclick="nav(1)">Next</button></div>
+        <div style="display: flex; gap: 10px;"><button class="run-btn" style="background:#444;" onclick="nav(-1)">Prev</button><button class="run-btn" onclick="nav(1)">Next</button></div>
         <button id="exitVarBtn" onclick="exitVar()" style="display:none; width:100%; padding:14px; background:#b33430; border:none; color:#fff; font-weight:bold; border-radius:10px; margin-top:5px;">🔙 Exit Variation</button>
-        <button onclick="location.reload()" style="background:none; border:none; color:#888; margin-top:10px; cursor:pointer; width:100%;">↺ Load New Game</button>
+        <button class="btn-secondary" onclick="location.reload()">↺ Load New Game</button>
     </div>
 </div>
 <script>
+    // Initialize Filter Values
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const now = new Date();
+    for(let i=now.getFullYear(); i>=2010; i--) $('#fYear').append(new Option(i, i));
+    months.forEach((m, i) => $('#fMonth').append(new Option(m, (i+1).toString().padStart(2, '0'))));
+    for(let i=1; i<=31; i++) $('#fDay').append(new Option(i, i));
+    $('#fMonth').val((now.getMonth()+1).toString().padStart(2, '0'));
+
     var selPgn = "", board = null, game = new Chess(), engine = null, hData = [], fens = [], evs = [], bMoves = [], aMoves = [], mLine = [], cIdx = -1, stp = 0, depth = 16, sSq = null, eMode = "batch", branchIdx = -1;
     function setTab(t) { $(".tab").removeClass("active"); $(".tab-content").removeClass("active"); if(t=='api'){ $("#t-api").addClass("active"); $("#p-api").addClass("active"); } else { $("#t-pgn").addClass("active"); $("#p-pgn").addClass("active"); } }
+    
     async function apiFetch() {
-        var u = $("#userInput").val().trim(); if(!u) return; $("#statusMsg").text("Loading history...");
+        var u = $("#userInput").val().trim(); if(!u) return;
+        var y = $("#fYear").val(), m = $("#fMonth").val(), dFilter = $("#fDay").val();
+        $("#statusMsg").text("Searching Archives...");
         try {
-            var r = await fetch("https://api.chess.com/pub/player/"+u+"/games/archives");
-            var d = await r.json(); var gR = await fetch(d.archives.pop());
-            var gD = await gR.json(); var list = $("#glBox").empty().show();
-            gD.games.reverse().slice(0, 20).forEach((g, i) => {
+            var r = await fetch("https://api.chess.com/pub/player/"+u+"/games/"+y+"/"+m);
+            var gD = await r.json(); var list = $("#glBox").empty().show();
+            var filteredGames = gD.games.reverse();
+            
+            if(dFilter !== "all") {
+                filteredGames = filteredGames.filter(g => {
+                    let date = new Date(g.end_time * 1000);
+                    return date.getDate() == parseInt(dFilter);
+                });
+            }
+
+            if(filteredGames.length === 0) { $("#statusMsg").text("No games found for this date."); return; }
+
+            filteredGames.forEach((g, i) => {
                 var isW = g.white.username.toLowerCase() === u.toLowerCase(), opp = isW ? g.black : g.white;
                 var res = (isW ? g.white.result : g.black.result) == "win" ? "win" : "loss";
                 var card = $("<div>").addClass("game-card").click(function(){ $(".game-card").removeClass("selected"); $(this).addClass("selected"); selPgn = g.pgn; $("#statusMsg").text("Selected. Click Run!"); });
@@ -110,9 +164,10 @@
                 card.append(av, det, $("<div>").addClass("gc-res "+res).text(res.toUpperCase())); list.append(card);
                 fetch("https://api.chess.com/pub/player/"+opp.username).then(res=>res.json()).then(p=>{ if(p.avatar) $("#av-"+i+" img").attr("src", p.avatar); else $("#av-"+i+" img").hide(); });
             });
-            $("#statusMsg").text("Select a game:");
-        } catch(e) { $("#statusMsg").text("Error."); }
+            $("#statusMsg").text("Games loaded.");
+        } catch(e) { $("#statusMsg").text("Error fetching history."); }
     }
+
     function startAnalysis() {
         var p = $("#p-api").hasClass("active") ? selPgn : $("#pgnInput").val().trim(); if(!p) return alert("Select game!");
         depth = parseInt($("#depth").val()); $("#runBtn").prop("disabled", true);
@@ -120,19 +175,23 @@
             fetch("https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js").then(r=>r.text()).then(t=>{
                 engine = new Worker(URL.createObjectURL(new Blob([t], {type:"application/javascript"})));
                 engine.onmessage = e => handleEngine(e.data);
-                engine.postMessage("uci"); engine.postMessage("setoption name Threads value 4"); engine.postMessage("setoption name Hash value 64"); prep(p);
+                engine.postMessage("uci");
+                engine.postMessage("setoption name Threads value 64");
+                engine.postMessage("setoption name Hash value 256");
+                prep(p);
             });
         } else { engine.postMessage("ucinewgame"); prep(p); }
     }
     function prep(p) {
         game.reset(); var ms = p.replace(/\[.*?\]/sg, "").replace(/\{.*?\}/sg, "").trim().replace(/\d+\.+/g, " ").replace(/\n/g, " ").split(/\s+/);
         for(let m of ms) { if(m!="" && isNaN(m[0])) if(game.move(m)===null) break; }
-        hData = game.history({verbose:true}); var t=new Chess(); fens=[t.fen()]; hData.forEach(m=>{t.move(m); fens.push(t.fen());});
+        hData = game.history({verbose:true}); if(hData.length==0) return alert("Bad PGN.");
+        var t=new Chess(); fens=[t.fen()]; hData.forEach(m=>{t.move(m); fens.push(t.fen());});
         $("#prog-wrap").show(); evs=new Array(fens.length).fill(0); bMoves=new Array(fens.length).fill(null); stp=0; eMode = "batch"; runLoop();
     }
     function runLoop() {
         if(stp >= fens.length) return finalize();
-        var total = fens.length - 1; $("#prog-fill").css("width", (stp/total*100)+"%"); $("#statusMsg").text("Analyzing " + stp + " / " + total);
+        var total = fens.length - 1; $("#prog-fill").css("width", (stp/total*100)+"%"); $("#statusMsg").text("Reviewing " + stp + " / " + total);
         var c = new Chess(fens[stp]);
         if(c.game_over()){ evs[stp]=c.in_checkmate()?(fens[stp].includes(" b ")?-10:10):0; stp++; return runLoop(); }
         engine.postMessage("position fen "+fens[stp]); engine.postMessage("go depth "+depth);
@@ -143,11 +202,8 @@
         else if(l.includes("score mate")) _curSc = parseInt(l.match(/score mate (-?\d+)/)[1])>0?10.0:-10.0;
         else if(l.includes("bestmove")) {
             var bm = l.match(/bestmove\s+(\S+)/)[1];
-            if(eMode == "batch") {
-                evs[stp]=fens[stp].includes(" b ")?-_curSc:_curSc; bMoves[stp]=bm; stp++; runLoop();
-            } else if(eMode == "live") {
-                liveProcessResult(_curSc, bm);
-            }
+            if(eMode == "batch") { evs[stp]=fens[stp].includes(" b ")?-_curSc:_curSc; bMoves[stp]=bm; stp++; runLoop(); }
+            else if(eMode == "live") { liveRes(_curSc, bm); }
         }
     }
     function finalize() {
@@ -163,13 +219,9 @@
             if(eMode == "live") return;
             var q=$(e.target).closest("[data-square]").attr("data-square"), p=game.get(q);
             if(p && p.color==game.turn()){ sSq=q; clr(); $(".square-"+q).addClass("selected-square"); game.moves({square:q, verbose:true}).forEach(m=>{$(".square-"+m.to).addClass(m.captured?"legal-cap":"legal-dot")}); }
-            else if(sSq){ 
-                var v=game.moves({square:sSq, verbose:true}).find(m=>m.to==q); 
-                if(v){ playManualMove(sSq, q); } 
-                sSq=null; clr(); 
-            }
+            else if(sSq){ var v=game.moves({square:sSq, verbose:true}).find(m=>m.to==q); if(v){ playMan(sSq, q); } sSq=null; clr(); }
         });
-        buildRibbonUI(); jump(0);
+        buildRib(); jump(0);
     }
     function classify(s,e,a,t,b){
         if(s.includes("#")) return {id:"#", class:"c-best", text:"is a Checkmate!", acc:100};
@@ -180,41 +232,36 @@
         else if(l>1.2){msg="is a Mistake"; cls="c-mistake"; sym="?";} 
         else if(l>0.6){msg="is an Inaccuracy"; cls="c-inaccuracy"; sym="?!";}
         else if(l<-0.2 && ac>=98){msg="is Brilliant!!"; cls="c-brilliant"; sym="!!";}
-        else if(l<0){msg="is a Great move"; cls="c-great"; sym="$";}
         if(l>0.6 && b) msg += ". Better was <b>"+b+"</b>";
         return {id:sym, class:cls, text:msg, acc:ac};
     }
-    function playManualMove(s,t){
+    function playMan(s,t){
         var move = game.move({from:s, to:t, promotion:"q"}); if(!move) return;
         if(eMode != "live") branchIdx = cIdx;
         cIdx++; aMoves = aMoves.slice(0, cIdx);
-        aMoves.push({san:move.san, to:move.to, rating:{id:"...", class:"c-book", text:"is being analyzed...", acc:0}, eval:(cIdx>0?aMoves[cIdx-1].eval:0)});
-        $("#exitVarBtn").show(); buildRibbonUI(); jump(cIdx);
+        aMoves.push({san:move.san, to:move.to, rating:{id:"...", class:"c-book", text:"Thinking...", acc:0}, eval:(cIdx>0?aMoves[cIdx-1].eval:0)});
+        $("#exitVarBtn").show(); buildRib(); jump(cIdx);
         eMode = "live"; engine.postMessage("position fen "+game.fen()); engine.postMessage("go depth "+depth);
     }
-    function liveProcessResult(s, bm){
-        var turn = game.fen().includes(" w ") ? "w" : "b";
-        var ws = (turn == "w") ? s : -s; 
-        var prevEv = (cIdx > 0) ? aMoves[cIdx-1].eval : 0;
-        var lanT = new Chess(game.fen()); var mt = lanT.move({from:bm.slice(0,2), to:bm.slice(2,4), promotion:"q"});
-        aMoves[cIdx].eval = ws;
-        aMoves[cIdx].rating = classify(aMoves[cIdx].san, prevEv, ws, (turn == "w" ? "b" : "w"), (mt?mt.san:null));
+    function liveRes(s, bm){
+        var turn = game.fen().includes(" w ") ? "w" : "b", ws = (turn == "w") ? s : -s, prevEv = (cIdx > 0) ? aMoves[cIdx-1].eval : 0;
+        var temp = new Chess(game.fen()); var mt = temp.move({from:bm.slice(0,2), to:bm.slice(2,4), promotion:"q"});
+        aMoves[cIdx].eval = ws; aMoves[cIdx].rating = classify(aMoves[cIdx].san, prevEv, ws, (turn == "w" ? "b" : "w"), (mt?mt.san:null));
         eMode = "idle"; jump(cIdx);
     }
-    function exitVar() { clr(); sSq=null; aMoves=JSON.parse(JSON.stringify(mLine)); eMode="batch"; $("#exitVarBtn").hide(); buildRibbonUI(); jump(branchIdx>-1?branchIdx:0); }
-    function buildRibbonUI(){
-        var r=$("#rib").empty(); aMoves.forEach((m,i)=>{ r.append($("<div>").addClass("m-item").attr("id","r"+i).text(((i%2==0?Math.floor(i/2)+1+".":""))+" "+m.san).click(()=>jump(i))); });
-    }
+    function exitVar() { clr(); sSq=null; aMoves=JSON.parse(JSON.stringify(mLine)); eMode="batch"; $("#exitVarBtn").hide(); buildRib(); jump(branchIdx>-1?branchIdx:0); }
+    function buildRib(){ var r=$("#rib").empty(); aMoves.forEach((m,i)=>{ r.append($("<div>").addClass("m-item").attr("id","r"+i).text(((i%2==0?Math.floor(i/2)+1+".":""))+" "+m.san).click(()=>jump(i))); }); }
     function clr(){ $("#board [data-square]").removeClass("selected-square legal-dot legal-cap"); }
     function nav(d){ var n=cIdx+d; if(n>=0 && n<aMoves.length) jump(n); }
     function jump(x){
         game.reset(); for(var i=0; i<=x; i++) game.move(aMoves[i].san);
         cIdx=x; board.position(game.fen()); var d=aMoves[x], e=d.eval, ed=(e>0?"+":"")+e.toFixed(1);
         if(Math.abs(e)>=9.9) ed=e>0?"+M":"-M";
-        $("#coach-text").html("<span style='padding:2px 8px; border-radius:4px; color:#fff;' class='"+d.rating.class+"'>"+d.rating.id+"</span> "+d.san+" "+d.rating.text);
+        $("#coach-text").html("<span style='padding:2px 8px; border-radius:4px; color:#fff;' class='"+d.rating.class+"'>"+d.rating.id+"</span> "+"<b>"+d.san+"</b> "+d.rating.text);
         $("#en").text(ed).css({color:e>=0?"#000":"#fff", bottom:e>=0?"auto":"4px", top:e>=0?"4px":"auto"});
         $("#ef").css("height", Math.max(0, Math.min(100, 50+(e*10)))+"%");
-        $("#badge-layer").html('<div class="move-badge '+d.rating.class+'" style="top:'+((8-parseInt(d.to[1]))*12.5)+'%;left:'+(("abcdefgh".indexOf(d.to[0])*12.5)+12.5)+'%">'+d.rating.id+'</div>');
+        var files = 'abcdefgh'; var col = files.indexOf(d.to[0]); var row = 8 - parseInt(d.to[1]);
+        $("#badge-layer").html('<div class="move-badge '+d.rating.class+'" style="top:'+(row*12.5)+'%; left:'+(col*12.5 + 6.25)+'%;">'+d.rating.id+'</div>');
         var wa=0, wm=0, ba=0, bm=0;
         for (var k=0; k<=x; k++){ var t=(k%2==0)?"w":"b"; if(aMoves[k].rating.acc>0){ if(t=="w"){wa+=aMoves[k].rating.acc;wm++;}else{ba+=aMoves[k].rating.acc;bm++;} } }
         $("#wa-text").text(wm>0?(wa/wm).toFixed(0):"100"); $("#ba-text").text(bm>0?(ba/bm).toFixed(0):"100");
