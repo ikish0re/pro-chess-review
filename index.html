@@ -66,9 +66,22 @@
         .acc-val { font-size: 22px; font-weight: 900; line-height: 1; }
         .acc-label { font-size: 10px; font-weight: bold; text-transform: uppercase; margin-top: 4px; opacity: 0.7; }
         
-        .coach-wrap { position: relative; width: 100%; height: 64px; flex-shrink: 0; }
-        .coach-avatar { position: absolute; bottom: 0; left: 0; font-size: 45px; line-height: 1; z-index: 2; }
-        .bubble { position: absolute; bottom: 0; left: 55px; right: 0; background: #fff; color: #000; padding: 10px 14px; border-radius: 20px; border-bottom-left-radius: 2px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); z-index: 2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.35; max-height: 60px; }
+        .coach-wrap { display: flex; align-items: center; width: 100%; gap: 8px; }
+        .coach-avatar { font-size: 45px; line-height: 1; flex-shrink: 0; }
+        .bubble { flex: 1; background: #fff; color: #000; padding: 10px 14px; border-radius: 20px; border-bottom-left-radius: 2px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* Slide-up explanation sheet */
+        #expl-sheet { position: fixed; left: 0; right: 0; bottom: -400px; z-index: 998; background: #1c1c1e; border-radius: 20px 20px 0 0; padding: 0 16px 20px; box-shadow: 0 -4px 24px rgba(0,0,0,0.6); transition: bottom 0.32s cubic-bezier(0.4,0,0.2,1); max-height: 55vh; overflow-y: auto; }
+        #expl-sheet.open { bottom: var(--nav-h, 85px); }
+        .sheet-handle { width: 36px; height: 4px; background: #555; border-radius: 2px; margin: 10px auto 14px; }
+        .sheet-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; padding: 3px 10px; border-radius: 20px; margin-bottom: 10px; }
+        .sheet-badge.c-inaccuracy { background: rgba(240,193,92,0.15); color: #f0c15c; border: 1px solid rgba(240,193,92,0.3); }
+        .sheet-badge.c-mistake    { background: rgba(230,145,44,0.15); color: #e6912c; border: 1px solid rgba(230,145,44,0.3); }
+        .sheet-badge.c-blunder    { background: rgba(179,52,48,0.15);  color: #e05550; border: 1px solid rgba(179,52,48,0.3); }
+        .sheet-title { font-size: 16px; font-weight: 800; color: #fff; margin-bottom: 8px; line-height: 1.3; }
+        .sheet-body  { font-size: 14px; color: #aaa; line-height: 1.6; }
+        .sheet-body b { color: #81b64c; }
+        .sheet-dismiss { position: absolute; top: 12px; right: 16px; background: #333; border: none; color: #888; font-size: 16px; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .board-box { display: flex; gap: 10px; width: 100%; }
         #board-wrapper { flex: 1; position: relative; border-radius: 6px; border: 3px solid #333; overflow: hidden; }
         #badge-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
@@ -87,17 +100,6 @@
         .legal-cap::after { content: ""; position: absolute; top: 50%; left: 50%; width: 80%; height: 80%; border: 6px solid rgba(0,0,0,0.2); border-radius: 50%; transform: translate(-50%, -50%); box-sizing: border-box; pointer-events: none; }
         
         .btn-secondary { width: 100%; padding: 12px; background: #444; border: none; color: #ccc; font-weight: bold; border-radius: 8px; margin-top: 15px; cursor: pointer; transition: 0.2s; border: 1px solid #555; }
-        #explain-box { background: #1a2614; border: 1px solid #3a5c28; border-radius: 10px; padding: 10px 14px; font-size: 13px; color: #c8e6a0; line-height: 1.55; display: none; }
-        .ex-label { font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #81b64c; margin-bottom: 5px; opacity: 0.8; }
-        .ex-text { color: #ddefc8; }
-        .ex-text.loading { color: #7a9966; font-style: italic; }
-        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-        .ex-cursor { display: inline-block; width: 7px; height: 13px; background: #81b64c; margin-left: 2px; vertical-align: middle; animation: blink 0.8s infinite; border-radius: 1px; }
-        #explain-box .ex-label { font-size: 11px; font-weight: bold; text-transform: uppercase; color: #81b64c; margin-bottom: 4px; letter-spacing: 0.5px; }
-        #explain-box .ex-text { color: #ddeec8; }
-        #explain-box.loading .ex-text { color: #888; font-style: italic; }
-        #explain-box.good-move { background: #1a2a1a; border-color: #3a7c28; }
-        #explain-box.bad-move { background: #2a1a1a; border-color: #7c3028; }
     </style>
 </head>
 <body>
@@ -140,10 +142,21 @@
             <div class="eval-bar"><div class="efill" id="ef"></div><div class="enum" id="en" style="bottom:4px;">0.0</div></div>
         </div>
         <div class="ribbon" id="rib"></div>
-        <div id="explain-box"><div class="ex-label">💡 Explanation</div><div class="ex-text" id="ex-text"></div></div>
-        <div style="display: flex; gap: 10px;"><button class="run-btn" style="background:#444;" onclick="nav(-1)">Prev</button><button class="run-btn" onclick="nav(1)">Next</button></div>
-        <button id="exitVarBtn" onclick="exitVar()" style="display:none; width:100%; padding:14px; background:#b33430; border:none; color:#fff; font-weight:bold; border-radius:10px; margin-top:5px;">🔙 Exit Variation</button>
         <button class="btn-secondary" onclick="location.reload()">↺ Load New Game</button>
+        <div style="height: 90px;"></div><!-- spacer so content clears fixed bar -->
+    </div>
+    <!-- Slide-up explanation sheet -->
+    <div id="expl-sheet">
+        <div class="sheet-handle"></div>
+        <button class="sheet-dismiss" onclick="$('#expl-sheet').removeClass('open')">✕</button>
+        <div id="sheet-badge" class="sheet-badge"></div>
+        <div id="sheet-title" class="sheet-title"></div>
+        <div id="sheet-body"  class="sheet-body"></div>
+    </div>
+    <!-- Fixed bottom nav bar -->
+    <div id="nav-bar" style="display:none; position:fixed; bottom:0; left:0; right:0; background:#21201d; padding:10px 16px 24px; flex-direction:column; gap:6px; z-index:999; border-top:1px solid #333;">
+        <button id="exitVarBtn" onclick="exitVar()" style="display:none; width:100%; padding:12px; background:#b33430; border:none; color:#fff; font-weight:bold; border-radius:10px;">🔙 Exit Variation</button>
+        <div style="display:flex; gap:10px;"><button class="run-btn" style="background:#444;" onclick="nav(-1)">Prev</button><button class="run-btn" onclick="nav(1)">Next</button></div>
     </div>
 </div>
 <script>
@@ -304,7 +317,7 @@ $(document).ready(function() {
         var currentUser = $("#userInput").val().trim().toLowerCase();
         userColor = "white";
         if(bm && bm[1].toLowerCase() === currentUser) userColor = "black";
-        $("#setup-screen").hide(); $("#review-screen").css("display","flex");
+        $("#setup-screen").hide(); $("#review-screen").css("display","flex"); $("#nav-bar").css("display","flex");
         board = ChessBoard("board", {position:"start", orientation: userColor, pieceTheme:p=>"https://raw.githubusercontent.com/oakmac/chessboardjs/master/website/img/chesspieces/wikipedia/"+p+".png", moveSpeed:"fast"});
         $("#board").on("click", "[data-square]", function(e){
             if(eMode == "live") return;
@@ -338,7 +351,7 @@ $(document).ready(function() {
         if(eMode != "live") branchIdx = cIdx;
         cIdx++; aMoves = aMoves.slice(0, cIdx);
         aMoves.push({san:move.san, to:move.to, rating:{id:"...", class:"c-book", text:"Thinking...", acc:0}, eval:(cIdx>0?aMoves[cIdx-1].eval:0)});
-        $("#exitVarBtn").show(); buildRib(); jump(cIdx);
+        $("#exitVarBtn").show(); updateNavH(); buildRib(); jump(cIdx);
         // Short-circuit: no engine needed if game is over
         if(game.in_checkmate()) {
             aMoves[cIdx].rating = {id:"#", class:"c-best", text:"is a Checkmate! 🏆", acc:100};
@@ -372,12 +385,11 @@ $(document).ready(function() {
     function generateExplanation(x) {
         var d = aMoves[x];
         var badClasses = ["c-inaccuracy","c-mistake","c-blunder"];
-        if(!d || !badClasses.includes(d.rating.class)) { $("#explain-box").hide(); return; }
+        if(!d || !badClasses.includes(d.rating.class)) { $("#expl-sheet").removeClass("open"); return; }
 
         var cacheKey = x + "_" + d.san;
         if(explCache[cacheKey]) {
-            $("#ex-text").html(explCache[cacheKey]);
-            $("#explain-box").show(); return;
+            showSheet(d, explCache[cacheKey]); return;
         }
 
         // Rebuild board state BEFORE this move
@@ -502,16 +514,28 @@ $(document).ready(function() {
         if(bestWord) txt += " The engine recommends <b>" + bestWord + "</b> instead.";
 
         explCache[cacheKey] = txt;
-        $("#ex-text").html(txt);
-        $("#explain-box").show();
+        showSheet(d, txt);
+    }
+    function updateNavH() {
+        var h = document.getElementById("nav-bar").offsetHeight;
+        document.documentElement.style.setProperty("--nav-h", h + "px");
+    }
+    function showSheet(d, txt) {
+        var labelMap = {"c-inaccuracy":"?! Inaccuracy","c-mistake":"? Mistake","c-blunder":"?? Blunder"};
+        $("#sheet-badge").attr("class","sheet-badge "+d.rating.class).text(labelMap[d.rating.class]||"");
+        $("#sheet-title").html("<b>"+friendlyMove(d.san)+"</b> "+d.rating.text.replace(". Better was","<br><span style='font-size:13px;color:#aaa;font-weight:400'>Better was</span>"));
+        $("#sheet-body").html(txt);
+        updateNavH();
+        $("#expl-sheet").addClass("open");
     }
     // Alias so the rest of the code that calls fetchExplanation still works
     var fetchExplanation = generateExplanation;
-    function exitVar() { clr(); sSq=null; aMoves=JSON.parse(JSON.stringify(mLine)); eMode="batch"; $("#exitVarBtn").hide(); buildRib(); jump(branchIdx>-1?branchIdx:0); }
+    function exitVar() { clr(); sSq=null; aMoves=JSON.parse(JSON.stringify(mLine)); eMode="batch"; $("#exitVarBtn").hide(); updateNavH(); buildRib(); jump(branchIdx>-1?branchIdx:0); }
     function buildRib(){ var r=$("#rib").empty(); aMoves.forEach((m,i)=>{ r.append($("<div>").addClass("m-item").attr("id","r"+i).text(((i%2==0?Math.floor(i/2)+1+".":""))+" "+friendlyMove(m.san)).click(()=>jump(i))); }); }
     function clr(){ $("#board [data-square]").removeClass("selected-square legal-dot legal-cap"); }
     function nav(d){ var n=cIdx+d; if(n>=0 && n<aMoves.length) jump(n); }
     function jump(x){
+        $("#expl-sheet").removeClass("open");
         game.reset(); for(var i=0; i<=x; i++) game.move(aMoves[i].san);
         cIdx=x; board.position(game.fen()); var d=aMoves[x], e=d.eval, ed=(e>0?"+":"")+e.toFixed(1);
         if(Math.abs(e)>=9.9) ed=e>0?"+M":"-M";
