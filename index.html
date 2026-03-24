@@ -4,10 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pro Game Review</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+        // Inline jQuery fallback loader — runs before any CDN tag
+        window._libsReady = false;
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"
+            onerror="this.onerror=null;this.src='https://code.jquery.com/jquery-3.6.0.min.js'"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"
+            onerror="this.onerror=null;this.src='https://unpkg.com/chess.js@0.10.3/chess.min.js'"></script>
     <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
-    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"
+            onerror="this.onerror=null;this.src='https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js'"></script>
     <style>
         :root { --bg: #21201d; --panel: #262421; --accent: #81b64c; --text: #fff; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -39,6 +46,7 @@
         .gc-meta { font-size: 11px; color: #777; margin-top: 3px; }
         .gc-res { font-weight: bold; font-size: 11px; padding: 5px 10px; border-radius: 6px; min-width: 65px; text-align: center; }
         .win { background: rgba(129, 182, 76, 0.2); color: #81b64c; border: 1px solid #81b64c; }
+        .draw { background: rgba(240, 193, 92, 0.2); color: #f0c15c; border: 1px solid #f0c15c; }
         .loss { background: rgba(179, 52, 48, 0.2); color: #b33430; border: 1px solid #b33430; }
         .sel-icon { color: #81b64c; font-size: 16px; display: none; }
         .game-card.selected .sel-icon { display: inline; }
@@ -58,8 +66,9 @@
         .acc-val { font-size: 22px; font-weight: 900; line-height: 1; }
         .acc-label { font-size: 10px; font-weight: bold; text-transform: uppercase; margin-top: 4px; opacity: 0.7; }
         
-        .coach { display: flex; align-items: flex-end; gap: 10px; }
-        .bubble { background: #fff; color: #000; padding: 12px 15px; border-radius: 20px; border-bottom-left-radius: 2px; flex: 1; font-weight: bold; font-size: 14px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+        .coach-wrap { position: relative; width: 100%; height: 64px; flex-shrink: 0; }
+        .coach-avatar { position: absolute; bottom: 0; left: 0; font-size: 45px; line-height: 1; z-index: 2; }
+        .bubble { position: absolute; bottom: 0; left: 55px; right: 0; background: #fff; color: #000; padding: 10px 14px; border-radius: 20px; border-bottom-left-radius: 2px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); z-index: 2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.35; max-height: 60px; }
         .board-box { display: flex; gap: 10px; width: 100%; }
         #board-wrapper { flex: 1; position: relative; border-radius: 6px; border: 3px solid #333; overflow: hidden; }
         #badge-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
@@ -78,6 +87,17 @@
         .legal-cap::after { content: ""; position: absolute; top: 50%; left: 50%; width: 80%; height: 80%; border: 6px solid rgba(0,0,0,0.2); border-radius: 50%; transform: translate(-50%, -50%); box-sizing: border-box; pointer-events: none; }
         
         .btn-secondary { width: 100%; padding: 12px; background: #444; border: none; color: #ccc; font-weight: bold; border-radius: 8px; margin-top: 15px; cursor: pointer; transition: 0.2s; border: 1px solid #555; }
+        #explain-box { background: #1a2614; border: 1px solid #3a5c28; border-radius: 10px; padding: 10px 14px; font-size: 13px; color: #c8e6a0; line-height: 1.55; display: none; }
+        .ex-label { font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #81b64c; margin-bottom: 5px; opacity: 0.8; }
+        .ex-text { color: #ddefc8; }
+        .ex-text.loading { color: #7a9966; font-style: italic; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+        .ex-cursor { display: inline-block; width: 7px; height: 13px; background: #81b64c; margin-left: 2px; vertical-align: middle; animation: blink 0.8s infinite; border-radius: 1px; }
+        #explain-box .ex-label { font-size: 11px; font-weight: bold; text-transform: uppercase; color: #81b64c; margin-bottom: 4px; letter-spacing: 0.5px; }
+        #explain-box .ex-text { color: #ddeec8; }
+        #explain-box.loading .ex-text { color: #888; font-style: italic; }
+        #explain-box.good-move { background: #1a2a1a; border-color: #3a7c28; }
+        #explain-box.bad-move { background: #2a1a1a; border-color: #7c3028; }
     </style>
 </head>
 <body>
@@ -90,7 +110,7 @@
         </div>
         <div id="p-api" class="tab-content active">
             <div class="search-row">
-                <input type="text" id="userInput" placeholder="Username" value="MinnalManithan">
+                <input type="text" id="userInput" placeholder="Username">
                 <button onclick="apiFetch()" class="btn-search">Search</button>
             </div>
             <div class="filter-row">
@@ -100,7 +120,7 @@
                     <option value="all">Any Day</option>
                 </select>
             </div>
-            <div class="game-list" id="glBox" style="display: none;"></div>
+            <div id="statsBar" style="display:none; background:#1e2d14; border:1px solid #3a5c28; border-radius:8px; padding:10px 14px; margin-top:8px; display:none; flex-direction:row; justify-content:space-between; align-items:center; gap:8px;"><div style="text-align:center;"><div style="font-size:18px;font-weight:900;color:#81b64c;" id="statWins">0</div><div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px;">Wins</div></div><div style="width:1px;background:#3a5c28;align-self:stretch;"></div><div style="text-align:center;"><div style="font-size:18px;font-weight:900;color:#b33430;" id="statLosses">0</div><div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px;">Losses</div></div><div style="width:1px;background:#3a5c28;align-self:stretch;"></div><div style="text-align:center;"><div style="font-size:18px;font-weight:900;color:#f0c15c;" id="statDraws">0</div><div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px;">Draws</div></div><div style="width:1px;background:#3a5c28;align-self:stretch;"></div><div style="text-align:center;"><div style="font-size:18px;font-weight:900;color:#fff;" id="statAcc">—</div><div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px;">Avg Acc</div></div></div><div class="game-list" id="glBox" style="display: none;"></div>
         </div>
         <div id="p-pgn" class="tab-content"><textarea id="pgnInput" placeholder="Paste PGN here..."></textarea></div>
         <select id="depth" class="depth-select"><option value="300">⚡ Fast Review (0.3s/move)</option><option value="600" selected>🧠 Pro Review (0.6s/move)</option><option value="1500">👑 GM Review (1.5s/move)</option></select>
@@ -114,58 +134,105 @@
             <div class="acc-pill white-p"><span class="acc-val" id="wa-text">100</span><span class="acc-label">White Acc</span></div>
             <div class="acc-pill black-p"><span class="acc-val" id="ba-text">100</span><span class="acc-label">Black Acc</span></div>
         </div>
-        <div class="coach"><div style="font-size:45px;">👨🏽‍🏫</div><div class="bubble" id="coach-text">Ready.</div></div>
+        <div class="coach-wrap"><div class="coach-avatar">👨🏽‍🏫</div><div class="bubble" id="coach-text">Ready.</div></div>
         <div class="board-box">
             <div id="board-wrapper"><div id="board"></div><div id="badge-layer"></div></div>
             <div class="eval-bar"><div class="efill" id="ef"></div><div class="enum" id="en" style="bottom:4px;">0.0</div></div>
         </div>
         <div class="ribbon" id="rib"></div>
+        <div id="explain-box"><div class="ex-label">💡 Explanation</div><div class="ex-text" id="ex-text"></div></div>
         <div style="display: flex; gap: 10px;"><button class="run-btn" style="background:#444;" onclick="nav(-1)">Prev</button><button class="run-btn" onclick="nav(1)">Next</button></div>
         <button id="exitVarBtn" onclick="exitVar()" style="display:none; width:100%; padding:14px; background:#b33430; border:none; color:#fff; font-weight:bold; border-radius:10px; margin-top:5px;">🔙 Exit Variation</button>
         <button class="btn-secondary" onclick="location.reload()">↺ Load New Game</button>
     </div>
 </div>
 <script>
-    // Initialize Filter Values
+$(document).ready(function() {
+    // ── Library sanity check ──────────────────────────────
+    if(typeof Chess === "undefined" || typeof ChessBoard === "undefined") {
+        document.body.innerHTML = '<div style="color:#f66;font-family:sans-serif;padding:30px;text-align:center;"><h2>⚠️ Libraries failed to load</h2><p>Please check your internet connection and reload the page.</p><button onclick="location.reload()" style="padding:12px 24px;background:#81b64c;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer;">↺ Retry</button></div>';
+        return;
+    }
+
+    // ── Initialize Filter Values ──────────────────────────
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const now = new Date();
     for(let i=now.getFullYear(); i>=2010; i--) $('#fYear').append(new Option(i, i));
     months.forEach((m, i) => $('#fMonth').append(new Option(m, (i+1).toString().padStart(2, '0'))));
     for(let i=1; i<=31; i++) $('#fDay').append(new Option(i, i));
+    $('#fYear').val(now.getFullYear());
     $('#fMonth').val((now.getMonth()+1).toString().padStart(2, '0'));
 
     var selPgn = "", board = null, game = new Chess(), engine = null, hData = [], fens = [], evs = [], bMoves = [], aMoves = [], mLine = [], cIdx = -1, stp = 0, depth = 16, moveTime = 600, sSq = null, eMode = "batch", branchIdx = -1, userColor = "white";
-    function setTab(t) { $(".tab").removeClass("active"); $(".tab-content").removeClass("active"); if(t=='api'){ $("#t-api").addClass("active"); $("#p-api").addClass("active"); } else { $("#t-pgn").addClass("active"); $("#p-pgn").addClass("active"); } }
+    var livePhase = 0, preFen = "", postFen = "", liveBestMove = "", livePreEval = 0, explCache = {};
+    // Expose functions called from HTML onclick attributes
+    window.setTab = function(t) { $(".tab").removeClass("active"); $(".tab-content").removeClass("active"); if(t=='api'){ $("#t-api").addClass("active"); $("#p-api").addClass("active"); } else { $("#t-pgn").addClass("active"); $("#p-pgn").addClass("active"); } };
+    window.apiFetch = apiFetch;
+    window.startAnalysis = startAnalysis;
+    window.nav = nav;
+    window.exitVar = exitVar;
     
     async function apiFetch() {
         var u = $("#userInput").val().trim(); if(!u) return;
         var y = $("#fYear").val(), m = $("#fMonth").val(), dFilter = $("#fDay").val();
+        if(!y || !m) { $("#statusMsg").text("Please select year and month."); return; }
         $("#statusMsg").text("Searching Archives...");
-        try {
-            var r = await fetch("https://api.chess.com/pub/player/"+u+"/games/"+y+"/"+m);
-            var gD = await r.json(); var list = $("#glBox").empty().show();
-            var filteredGames = gD.games.reverse();
-            
-            if(dFilter !== "all") {
-                filteredGames = filteredGames.filter(g => {
-                    let date = new Date(g.end_time * 1000);
-                    return date.getDate() == parseInt(dFilter);
-                });
+        var directUrl = "https://api.chess.com/pub/player/"+u+"/games/"+y+"/"+m;
+        var proxyUrl  = "https://corsproxy.io/?"+encodeURIComponent(directUrl);
+        var gD = null;
+        // Try direct first, fall back to CORS proxy (needed when opened as local file)
+        for(var attempt = 0; attempt < 2; attempt++) {
+            try {
+                var r = await fetch(attempt === 0 ? directUrl : proxyUrl);
+                if(!r.ok) throw new Error("HTTP "+r.status);
+                gD = await r.json(); break;
+            } catch(e) {
+                if(attempt === 1) { $("#statusMsg").text("Network error. Check connection & username."); return; }
             }
-
-            if(filteredGames.length === 0) { $("#statusMsg").text("No games found for this date."); return; }
-
-            filteredGames.forEach((g, i) => {
-                var isW = g.white.username.toLowerCase() === u.toLowerCase(), opp = isW ? g.black : g.white;
-                var res = (isW ? g.white.result : g.black.result) == "win" ? "win" : "loss";
-                var card = $("<div>").addClass("game-card").click(function(){ $(".game-card").removeClass("selected"); $(this).addClass("selected"); selPgn = g.pgn; $("#statusMsg").text("Selected. Click Run!"); });
-                var av = $("<div>").addClass("gc-avatar").attr("id", "av-"+i).append($("<img>").attr("src", ""));
-                var det = $("<div>").addClass("gc-details").append($("<div>").addClass("gc-opp").html(opp.username + " <span class='sel-icon'>✅</span>")).append($("<div>").addClass("gc-meta").text(g.time_class + " • " + new Date(g.end_time*1000).toLocaleDateString()));
-                card.append(av, det, $("<div>").addClass("gc-res "+res).text(res.toUpperCase())); list.append(card);
-                fetch("https://api.chess.com/pub/player/"+opp.username).then(res=>res.json()).then(p=>{ if(p.avatar) $("#av-"+i+" img").attr("src", p.avatar); else $("#av-"+i+" img").hide(); });
+        }
+        var list = $("#glBox").empty().show();
+        if(!gD || !gD.games || gD.games.length === 0) { $("#statusMsg").text("No games found for "+y+"/"+m); return; }
+        var filteredGames = [...gD.games].reverse();
+        if(dFilter !== "all") {
+            filteredGames = filteredGames.filter(g => {
+                let date = new Date(g.end_time * 1000);
+                return date.getDate() == parseInt(dFilter);
             });
-            $("#statusMsg").text("Games loaded.");
-        } catch(e) { $("#statusMsg").text("Error fetching history."); }
+        }
+        if(filteredGames.length === 0) { $("#statsBar").hide(); $("#statusMsg").text("No games found for this date."); return; }
+
+        // Compute stats
+        var wins = 0, losses = 0, draws = 0, totalAcc = 0, accCount = 0;
+        filteredGames.forEach(g => {
+            var isW = g.white.username.toLowerCase() === u.toLowerCase();
+            var result = isW ? g.white.result : g.black.result;
+            if(result === "win") wins++;
+            else if(["checkmated","resigned","timeout","abandoned","lose"].includes(result)) losses++;
+            else draws++;
+            // Chess.com sometimes includes accuracy in the game object
+            var acc = isW ? (g.accuracies ? g.accuracies.white : null) : (g.accuracies ? g.accuracies.black : null);
+            if(acc != null && acc > 0) { totalAcc += acc; accCount++; }
+        });
+        $("#statWins").text(wins);
+        $("#statLosses").text(losses);
+        $("#statDraws").text(draws);
+        $("#statAcc").text(accCount > 0 ? (totalAcc / accCount).toFixed(1) + "%" : "—");
+        $("#statsBar").css("display","flex");
+
+        filteredGames.forEach((g, i) => {
+            var isW = g.white.username.toLowerCase() === u.toLowerCase(), opp = isW ? g.black : g.white;
+            var result = isW ? g.white.result : g.black.result;
+            var resClass = result === "win" ? "win" : ["checkmated","resigned","timeout","abandoned","lose"].includes(result) ? "loss" : "draw";
+            var resLabel = result === "win" ? "WIN" : ["checkmated","resigned","timeout","abandoned","lose"].includes(result) ? "LOSS" : "DRAW";
+            var acc = isW ? (g.accuracies ? g.accuracies.white : null) : (g.accuracies ? g.accuracies.black : null);
+            var accStr = acc != null ? " · " + acc.toFixed(1) + "%" : "";
+            var card = $("<div>").addClass("game-card").click(function(){ $(".game-card").removeClass("selected"); $(this).addClass("selected"); selPgn = g.pgn; $("#statusMsg").text("Selected. Click Run!"); });
+            var av = $("<div>").addClass("gc-avatar").attr("id", "av-"+i).append($("<img>").attr("src", ""));
+            var det = $("<div>").addClass("gc-details").append($("<div>").addClass("gc-opp").html(opp.username + " <span class='sel-icon'>✅</span>")).append($("<div>").addClass("gc-meta").text(g.time_class + accStr + " • " + new Date(g.end_time*1000).toLocaleDateString()));
+            card.append(av, det, $("<div>").addClass("gc-res "+resClass).text(resLabel)); list.append(card);
+            fetch("https://api.chess.com/pub/player/"+opp.username).then(res=>res.json()).then(p=>{ if(p.avatar) $("#av-"+i+" img").attr("src", p.avatar); else $("#av-"+i+" img").hide(); }).catch(()=>{});
+        });
+        $("#statusMsg").text("Found "+filteredGames.length+" game(s). Tap one to select.");
     }
 
     function startAnalysis() {
@@ -203,7 +270,23 @@
         else if(l.includes("bestmove")) {
             var bm = l.match(/bestmove\s+(\S+)/)[1];
             if(eMode == "batch") { evs[stp]=fens[stp].includes(" b ")?-_curSc:_curSc; bMoves[stp]=bm; stp++; runLoop(); }
-            else if(eMode == "live") { liveRes(_curSc, bm); }
+            else if(eMode == "live") {
+                if(livePhase == 1) {
+                    // Phase 1: got best alternative and eval FROM the pre-move position
+                    liveBestMove = bm;
+                    // Normalize Phase 1 score to white's perspective for use as baseline
+                    var preMover = preFen.includes(" w ") ? "w" : "b";
+                    livePreEval = (preMover == "w") ? _curSc : -_curSc;
+                    livePhase = 2;
+                    // Phase 2: evaluate POST-move position for the actual resulting score
+                    engine.postMessage("position fen " + postFen);
+                    engine.postMessage("go movetime " + moveTime);
+                } else if(livePhase == 2) {
+                    // Phase 2: got eval from POST-move position
+                    liveRes(_curSc, liveBestMove);
+                    livePhase = 0;
+                }
+            }
         }
     }
     function finalize() {
@@ -238,8 +321,8 @@
         return san;
     }
     function classify(s,e,a,t,b){
-        if(s.includes("#")) return {id:"#", class:"c-best", text:"is a Checkmate!", acc:100};
-        if(s==b) return {id:"★", class:"c-best", text:"is the Best move", acc:100};
+        if(s.includes("#")) return {id:"#", class:"c-best", text:"is a Checkmate!", acc:100, bestMove:null};
+        if(s==b) return {id:"★", class:"c-best", text:"is the Best move", acc:100, bestMove:null};
         var l=(t=="w")?(e-a):(a-e), ac=l<=0.1?100:Math.max(10,100-(l*30));
         var msg="is Good", cls="c-good", sym="✔";
         if(l>3){msg="is a Blunder"; cls="c-blunder"; sym="??";} 
@@ -247,22 +330,183 @@
         else if(l>0.6){msg="is an Inaccuracy"; cls="c-inaccuracy"; sym="?!";}
         else if(l<-0.2 && ac>=98){msg="is Brilliant!!"; cls="c-brilliant"; sym="!!";}
         if(l>0.6 && b) msg += ". Better was <b>"+friendlyMove(b)+"</b>";
-        return {id:sym, class:cls, text:msg, acc:ac};
+        return {id:sym, class:cls, text:msg, acc:ac, bestMove:(l>0.6?b:null), evalLoss:l};
     }
     function playMan(s,t){
+        preFen = game.fen(); // capture PRE-move position
         var move = game.move({from:s, to:t, promotion:"q"}); if(!move) return;
         if(eMode != "live") branchIdx = cIdx;
         cIdx++; aMoves = aMoves.slice(0, cIdx);
         aMoves.push({san:move.san, to:move.to, rating:{id:"...", class:"c-book", text:"Thinking...", acc:0}, eval:(cIdx>0?aMoves[cIdx-1].eval:0)});
         $("#exitVarBtn").show(); buildRib(); jump(cIdx);
-        eMode = "live"; engine.postMessage("position fen "+game.fen()); engine.postMessage("go movetime "+moveTime);
+        // Short-circuit: no engine needed if game is over
+        if(game.in_checkmate()) {
+            aMoves[cIdx].rating = {id:"#", class:"c-best", text:"is a Checkmate! 🏆", acc:100};
+            eMode = "idle"; buildRib(); jump(cIdx); return;
+        }
+        if(game.game_over()) {
+            aMoves[cIdx].rating = {id:"½", class:"c-good", text:"ends the game (Draw)", acc:80};
+            eMode = "idle"; buildRib(); jump(cIdx); return;
+        }
+        postFen = game.fen(); // capture POST-move position
+        eMode = "live"; livePhase = 1;
+        // Phase 1: analyze PRE-move position to get correct "better was" suggestion
+        engine.postMessage("position fen " + preFen);
+        engine.postMessage("go movetime " + moveTime);
     }
     function liveRes(s, bm){
-        var turn = game.fen().includes(" w ") ? "w" : "b", ws = (turn == "w") ? s : -s, prevEv = (cIdx > 0) ? aMoves[cIdx-1].eval : 0;
-        var temp = new Chess(game.fen()); var mt = temp.move({from:bm.slice(0,2), to:bm.slice(2,4), promotion:"q"});
-        aMoves[cIdx].eval = ws; aMoves[cIdx].rating = classify(aMoves[cIdx].san, prevEv, ws, (turn == "w" ? "b" : "w"), (mt?mt.san:null));
+        // Normalize Phase 2 (post-move) score to white's perspective
+        var postColor = postFen.includes(" w ") ? "w" : "b";
+        var ws = (postColor == "w") ? s : -s;
+        // Use Phase 1's freshly computed pre-move eval as the baseline (not stale stored value)
+        // This ensures "better was X" and the classification use the same engine session
+        var mover = preFen.includes(" w ") ? "w" : "b";
+        var temp = new Chess(preFen); var mt = temp.move({from:bm.slice(0,2), to:bm.slice(2,4), promotion:"q"});
+        // If the user played exactly the best move, mark it as Best immediately
+        var playedSan = aMoves[cIdx].san;
+        var bestSan = mt ? mt.san : null;
+        aMoves[cIdx].eval = ws;
+        aMoves[cIdx].rating = classify(playedSan, livePreEval, ws, mover, bestSan);
         eMode = "idle"; jump(cIdx);
     }
+    function generateExplanation(x) {
+        var d = aMoves[x];
+        var badClasses = ["c-inaccuracy","c-mistake","c-blunder"];
+        if(!d || !badClasses.includes(d.rating.class)) { $("#explain-box").hide(); return; }
+
+        var cacheKey = x + "_" + d.san;
+        if(explCache[cacheKey]) {
+            $("#ex-text").html(explCache[cacheKey]);
+            $("#explain-box").show(); return;
+        }
+
+        // Rebuild board state BEFORE this move
+        var tmp = new Chess();
+        for(var i = 0; i < x; i++) tmp.move(aMoves[i].san);
+        var preFenForEx = tmp.fen();
+        var moverColor = preFenForEx.includes(" w ") ? "w" : "b";
+        var oppColor   = moverColor === "w" ? "b" : "w";
+        var moverWord  = moverColor === "w" ? "White" : "Black";
+        var moveNum    = Math.floor(x / 2) + 1;
+        var ratingWord = d.rating.class.replace("c-", "");
+        var evalLoss   = d.rating.evalLoss ? d.rating.evalLoss : 0;
+        var bestWord   = d.rating.bestMove ? friendlyMove(d.rating.bestMove) : null;
+        var playedSan  = friendlyMove(d.san);
+
+        // Parse the move that was actually played
+        var moveObj = null;
+        try {
+            var tmpCheck = new Chess(preFenForEx);
+            // find the verbose move matching d.san
+            var allMoves = tmpCheck.moves({verbose:true});
+            moveObj = allMoves.find(m => m.san === d.san) || null;
+        } catch(e) {}
+
+        // --- Tactical pattern detection ---
+        var reasons = [];
+
+        // 1. Hung a piece? Apply move, then check if the moved piece is en prise
+        if(moveObj) {
+            var afterMove = new Chess(preFenForEx);
+            afterMove.move(d.san);
+            var dest = moveObj.to;
+            var piece = afterMove.get(dest);
+            if(piece) {
+                // Check if destination is attacked by opponent
+                var oppAttacks = afterMove.moves({verbose:true}).filter(m => m.to === dest);
+                var defenders  = [];
+                // Flip turn to check defender count (hack: use a FEN flip)
+                var defFen = afterMove.fen().replace(/ (w|b) /, function(m,c){ return " "+(c==="w"?"b":"w")+" "; });
+                try {
+                    var defBoard = new Chess(defFen);
+                    defenders = defBoard.moves({verbose:true}).filter(m => m.to === dest);
+                } catch(e){}
+
+                var pieceNames = {p:"pawn", n:"knight", b:"bishop", r:"rook", q:"queen", k:"king"};
+                var pName = pieceNames[piece.type] || piece.type;
+
+                if(oppAttacks.length > 0 && defenders.length === 0) {
+                    reasons.push("The " + pName + " on " + dest + " is left completely undefended and can be captured for free.");
+                } else if(oppAttacks.length > defenders.length && evalLoss > 1.0) {
+                    reasons.push("The " + pName + " on " + dest + " is insufficiently defended and is likely to be lost.");
+                }
+            }
+
+            // 2. Did the move give away a free capture? (piece moved away leaving something hanging)
+            var preBoard = new Chess(preFenForEx);
+            var preAttacked = preBoard.moves({verbose:true}).filter(m => m.color === oppColor && m.captured);
+            var afterBoard2 = new Chess(preFenForEx);
+            afterBoard2.move(d.san);
+            var postAttacked = afterBoard2.moves({verbose:true}).filter(m => m.color === oppColor && m.captured);
+            var newHanging = postAttacked.filter(pa => !preAttacked.some(pr => pr.to === pa.to && pr.captured === pa.captured));
+            if(newHanging.length > 0 && reasons.length === 0) {
+                var pieceNames2 = {p:"pawn", n:"knight", b:"bishop", r:"rook", q:"queen", k:"king"};
+                var hung = newHanging[0];
+                reasons.push("The move allows the opponent to capture the " + (pieceNames2[hung.captured]||hung.captured) + " on " + hung.to + " for free.");
+            }
+
+            // 3. Check if the move missed a check/capture of opponent king threat
+            if(reasons.length === 0 && moveObj.captured) {
+                // Recapture possible?
+                var afterCapture = new Chess(preFenForEx);
+                afterCapture.move(d.san);
+                var recaps = afterCapture.moves({verbose:true}).filter(m => m.to === moveObj.to);
+                if(recaps.length > 0) {
+                    reasons.push("After this capture, the opponent can immediately recapture and regain material.");
+                }
+            }
+        }
+
+        // 4. King safety: did the move expose the king?
+        if(reasons.length === 0 && evalLoss > 1.5) {
+            var afterKing = new Chess(preFenForEx);
+            afterKing.move(d.san);
+            if(afterKing.in_check()) {
+                // Opponent is in check — shouldn't be bad, skip
+            } else {
+                // Check if mover's king is now in a weak spot (in_check after opponent reply)
+                var oppMoves2 = afterKing.moves({verbose:true});
+                var checksOpponent = oppMoves2.filter(m => {
+                    var t2 = new Chess(afterKing.fen()); t2.move(m);
+                    return t2.in_check();
+                });
+                if(checksOpponent.length > 0) {
+                    reasons.push("The move allows the opponent to deliver check, disrupting coordination and forcing a defensive response.");
+                }
+            }
+        }
+
+        // 5. Center/development fallback explanations based on move type and eval loss
+        if(reasons.length === 0) {
+            var moveNum2 = moveNum;
+            if(moveNum2 <= 10) {
+                if(d.san.startsWith("N") || d.san.startsWith("B")) {
+                    reasons.push("In the opening, this piece move wastes tempo and allows the opponent to seize central control with faster development.");
+                } else if(d.san.includes("x") === false && evalLoss > 0.8) {
+                    reasons.push("This move loses central control and gives the opponent a positional advantage that is difficult to recover from.");
+                }
+            }
+            if(reasons.length === 0) {
+                if(evalLoss > 3) {
+                    reasons.push("This move overlooks a strong opponent response that wins significant material or a decisive positional advantage.");
+                } else if(evalLoss > 1.2) {
+                    reasons.push("This move misses the position's key idea, allowing the opponent to take the initiative with a strong reply.");
+                } else {
+                    reasons.push("This move is slightly passive, giving the opponent an easier game without good compensation.");
+                }
+            }
+        }
+
+        // Build final explanation
+        var txt = reasons[0];
+        if(bestWord) txt += " The engine recommends <b>" + bestWord + "</b> instead.";
+
+        explCache[cacheKey] = txt;
+        $("#ex-text").html(txt);
+        $("#explain-box").show();
+    }
+    // Alias so the rest of the code that calls fetchExplanation still works
+    var fetchExplanation = generateExplanation;
     function exitVar() { clr(); sSq=null; aMoves=JSON.parse(JSON.stringify(mLine)); eMode="batch"; $("#exitVarBtn").hide(); buildRib(); jump(branchIdx>-1?branchIdx:0); }
     function buildRib(){ var r=$("#rib").empty(); aMoves.forEach((m,i)=>{ r.append($("<div>").addClass("m-item").attr("id","r"+i).text(((i%2==0?Math.floor(i/2)+1+".":""))+" "+friendlyMove(m.san)).click(()=>jump(i))); }); }
     function clr(){ $("#board [data-square]").removeClass("selected-square legal-dot legal-cap"); }
@@ -272,6 +516,7 @@
         cIdx=x; board.position(game.fen()); var d=aMoves[x], e=d.eval, ed=(e>0?"+":"")+e.toFixed(1);
         if(Math.abs(e)>=9.9) ed=e>0?"+M":"-M";
         $("#coach-text").html("<span style='padding:2px 8px; border-radius:4px; color:#fff;' class='"+d.rating.class+"'>"+d.rating.id+"</span> "+"<b>"+friendlyMove(d.san)+"</b> "+d.rating.text);
+        fetchExplanation(x);
         $("#en").text(ed).css({color:e>=0?"#000":"#fff", bottom:e>=0?"auto":"4px", top:e>=0?"4px":"auto"});
         $("#ef").css("height", Math.max(0, Math.min(100, 50+(e*10)))+"%");
         var files = 'abcdefgh'; var col = files.indexOf(d.to[0]); var row = 8 - parseInt(d.to[1]);
@@ -282,6 +527,7 @@
         $("#wa-text").text(wm>0?(wa/wm).toFixed(0):"100"); $("#ba-text").text(bm>0?(ba/bm).toFixed(0):"100");
         $(".m-item").removeClass("active"); if($("#r"+x).length) { $("#r"+x).addClass("active")[0].scrollIntoView({behavior:"smooth", block:"nearest", inline:"center"}); }
     }
+}); // end $(document).ready
 </script>
 </body>
 </html>
