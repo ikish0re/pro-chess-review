@@ -103,7 +103,7 @@
             <div class="game-list" id="glBox" style="display: none;"></div>
         </div>
         <div id="p-pgn" class="tab-content"><textarea id="pgnInput" placeholder="Paste PGN here..."></textarea></div>
-        <select id="depth" class="depth-select"><option value="12">⚡ Fast Review (Depth 12)</option><option value="16" selected>🧠 Pro Review (Depth 16)</option><option value="20">👑 GM Review (Depth 20)</option></select>
+        <select id="depth" class="depth-select"><option value="300">⚡ Fast Review (0.3s/move)</option><option value="600" selected>🧠 Pro Review (0.6s/move)</option><option value="1500">👑 GM Review (1.5s/move)</option></select>
         <button id="runBtn" class="run-btn" onclick="startAnalysis()">Run Game Review</button>
         <div id="statusMsg">Ready to analyze.</div>
         <div id="prog-wrap"><div id="prog-fill"></div></div>
@@ -134,7 +134,7 @@
     for(let i=1; i<=31; i++) $('#fDay').append(new Option(i, i));
     $('#fMonth').val((now.getMonth()+1).toString().padStart(2, '0'));
 
-    var selPgn = "", board = null, game = new Chess(), engine = null, hData = [], fens = [], evs = [], bMoves = [], aMoves = [], mLine = [], cIdx = -1, stp = 0, depth = 16, sSq = null, eMode = "batch", branchIdx = -1;
+    var selPgn = "", board = null, game = new Chess(), engine = null, hData = [], fens = [], evs = [], bMoves = [], aMoves = [], mLine = [], cIdx = -1, stp = 0, depth = 16, moveTime = 600, sSq = null, eMode = "batch", branchIdx = -1, userColor = "white";
     function setTab(t) { $(".tab").removeClass("active"); $(".tab-content").removeClass("active"); if(t=='api'){ $("#t-api").addClass("active"); $("#p-api").addClass("active"); } else { $("#t-pgn").addClass("active"); $("#p-pgn").addClass("active"); } }
     
     async function apiFetch() {
@@ -170,7 +170,7 @@
 
     function startAnalysis() {
         var p = $("#p-api").hasClass("active") ? selPgn : $("#pgnInput").val().trim(); if(!p) return alert("Select game!");
-        depth = parseInt($("#depth").val()); $("#runBtn").prop("disabled", true);
+        depth = parseInt($("#depth").val()); moveTime = depth; $("#runBtn").prop("disabled", true);
         if(!engine) {
             fetch("https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js").then(r=>r.text()).then(t=>{
                 engine = new Worker(URL.createObjectURL(new Blob([t], {type:"application/javascript"})));
@@ -184,7 +184,7 @@
     }
     function prep(p) {
         game.reset(); var ms = p.replace(/\[.*?\]/sg, "").replace(/\{.*?\}/sg, "").trim().replace(/\d+\.+/g, " ").replace(/\n/g, " ").split(/\s+/);
-        for(let m of ms) { if(m!="" && isNaN(m[0])) if(game.move(m)===null) break; }
+        for(let m of ms) { if(m!="" && (isNaN(m[0]) || m==="0-0" || m==="0-0-0")) if(game.move(m)===null) break; }
         hData = game.history({verbose:true}); if(hData.length==0) return alert("Bad PGN.");
         var t=new Chess(); fens=[t.fen()]; hData.forEach(m=>{t.move(m); fens.push(t.fen());});
         $("#prog-wrap").show(); evs=new Array(fens.length).fill(0); bMoves=new Array(fens.length).fill(null); stp=0; eMode = "batch"; runLoop();
@@ -194,7 +194,7 @@
         var total = fens.length - 1; $("#prog-fill").css("width", (stp/total*100)+"%"); $("#statusMsg").text("Reviewing " + stp + " / " + total);
         var c = new Chess(fens[stp]);
         if(c.game_over()){ evs[stp]=c.in_checkmate()?(fens[stp].includes(" b ")?-10:10):0; stp++; return runLoop(); }
-        engine.postMessage("position fen "+fens[stp]); engine.postMessage("go depth "+depth);
+        engine.postMessage("position fen "+fens[stp]); engine.postMessage("go movetime "+moveTime);
     }
     var _curSc = 0;
     function handleEngine(l) {
@@ -213,8 +213,16 @@
             aMoves.push({san:hData[i].san, to:hData[i].to, rating:r, eval:evs[i+1]});
         }
         mLine = JSON.parse(JSON.stringify(aMoves));
+        // Detect which color the user played to orient the board correctly
+        var activeTab = $("#p-api").hasClass("active");
+        var pgn4orient = activeTab ? selPgn : $("#pgnInput").val().trim();
+        var wm = pgn4orient.match(/\[White "([^"]+)"\]/i);
+        var bm = pgn4orient.match(/\[Black "([^"]+)"\]/i);
+        var currentUser = $("#userInput").val().trim().toLowerCase();
+        userColor = "white";
+        if(bm && bm[1].toLowerCase() === currentUser) userColor = "black";
         $("#setup-screen").hide(); $("#review-screen").css("display","flex");
-        board = ChessBoard("board", {position:"start", pieceTheme:p=>"https://raw.githubusercontent.com/oakmac/chessboardjs/master/website/img/chesspieces/wikipedia/"+p+".png", moveSpeed:"fast"});
+        board = ChessBoard("board", {position:"start", orientation: userColor, pieceTheme:p=>"https://raw.githubusercontent.com/oakmac/chessboardjs/master/website/img/chesspieces/wikipedia/"+p+".png", moveSpeed:"fast"});
         $("#board").on("click", "[data-square]", function(e){
             if(eMode == "live") return;
             var q=$(e.target).closest("[data-square]").attr("data-square"), p=game.get(q);
@@ -222,6 +230,12 @@
             else if(sSq){ var v=game.moves({square:sSq, verbose:true}).find(m=>m.to==q); if(v){ playMan(sSq, q); } sSq=null; clr(); }
         });
         buildRib(); jump(0);
+    }
+    function friendlyMove(san) {
+        if(!san) return san;
+        if(san === "O-O-O" || san === "0-0-0") return "Long Castle";
+        if(san === "O-O"   || san === "0-0")   return "Short Castle";
+        return san;
     }
     function classify(s,e,a,t,b){
         if(s.includes("#")) return {id:"#", class:"c-best", text:"is a Checkmate!", acc:100};
@@ -232,7 +246,7 @@
         else if(l>1.2){msg="is a Mistake"; cls="c-mistake"; sym="?";} 
         else if(l>0.6){msg="is an Inaccuracy"; cls="c-inaccuracy"; sym="?!";}
         else if(l<-0.2 && ac>=98){msg="is Brilliant!!"; cls="c-brilliant"; sym="!!";}
-        if(l>0.6 && b) msg += ". Better was <b>"+b+"</b>";
+        if(l>0.6 && b) msg += ". Better was <b>"+friendlyMove(b)+"</b>";
         return {id:sym, class:cls, text:msg, acc:ac};
     }
     function playMan(s,t){
@@ -241,7 +255,7 @@
         cIdx++; aMoves = aMoves.slice(0, cIdx);
         aMoves.push({san:move.san, to:move.to, rating:{id:"...", class:"c-book", text:"Thinking...", acc:0}, eval:(cIdx>0?aMoves[cIdx-1].eval:0)});
         $("#exitVarBtn").show(); buildRib(); jump(cIdx);
-        eMode = "live"; engine.postMessage("position fen "+game.fen()); engine.postMessage("go depth "+depth);
+        eMode = "live"; engine.postMessage("position fen "+game.fen()); engine.postMessage("go movetime "+moveTime);
     }
     function liveRes(s, bm){
         var turn = game.fen().includes(" w ") ? "w" : "b", ws = (turn == "w") ? s : -s, prevEv = (cIdx > 0) ? aMoves[cIdx-1].eval : 0;
@@ -250,17 +264,18 @@
         eMode = "idle"; jump(cIdx);
     }
     function exitVar() { clr(); sSq=null; aMoves=JSON.parse(JSON.stringify(mLine)); eMode="batch"; $("#exitVarBtn").hide(); buildRib(); jump(branchIdx>-1?branchIdx:0); }
-    function buildRib(){ var r=$("#rib").empty(); aMoves.forEach((m,i)=>{ r.append($("<div>").addClass("m-item").attr("id","r"+i).text(((i%2==0?Math.floor(i/2)+1+".":""))+" "+m.san).click(()=>jump(i))); }); }
+    function buildRib(){ var r=$("#rib").empty(); aMoves.forEach((m,i)=>{ r.append($("<div>").addClass("m-item").attr("id","r"+i).text(((i%2==0?Math.floor(i/2)+1+".":""))+" "+friendlyMove(m.san)).click(()=>jump(i))); }); }
     function clr(){ $("#board [data-square]").removeClass("selected-square legal-dot legal-cap"); }
     function nav(d){ var n=cIdx+d; if(n>=0 && n<aMoves.length) jump(n); }
     function jump(x){
         game.reset(); for(var i=0; i<=x; i++) game.move(aMoves[i].san);
         cIdx=x; board.position(game.fen()); var d=aMoves[x], e=d.eval, ed=(e>0?"+":"")+e.toFixed(1);
         if(Math.abs(e)>=9.9) ed=e>0?"+M":"-M";
-        $("#coach-text").html("<span style='padding:2px 8px; border-radius:4px; color:#fff;' class='"+d.rating.class+"'>"+d.rating.id+"</span> "+"<b>"+d.san+"</b> "+d.rating.text);
+        $("#coach-text").html("<span style='padding:2px 8px; border-radius:4px; color:#fff;' class='"+d.rating.class+"'>"+d.rating.id+"</span> "+"<b>"+friendlyMove(d.san)+"</b> "+d.rating.text);
         $("#en").text(ed).css({color:e>=0?"#000":"#fff", bottom:e>=0?"auto":"4px", top:e>=0?"4px":"auto"});
         $("#ef").css("height", Math.max(0, Math.min(100, 50+(e*10)))+"%");
         var files = 'abcdefgh'; var col = files.indexOf(d.to[0]); var row = 8 - parseInt(d.to[1]);
+        if(userColor === "black") { col = 7 - col; row = 7 - row; }
         $("#badge-layer").html('<div class="move-badge '+d.rating.class+'" style="top:'+(row*12.5)+'%; left:'+(col*12.5 + 6.25)+'%;">'+d.rating.id+'</div>');
         var wa=0, wm=0, ba=0, bm=0;
         for (var k=0; k<=x; k++){ var t=(k%2==0)?"w":"b"; if(aMoves[k].rating.acc>0){ if(t=="w"){wa+=aMoves[k].rating.acc;wm++;}else{ba+=aMoves[k].rating.acc;bm++;} } }
