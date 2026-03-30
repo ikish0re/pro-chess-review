@@ -19,15 +19,15 @@ analyzer = ChessAnalyzer()
 
 class PGNRequest(BaseModel):
     pgn:       str
-    move_time: float = 5.0   # seconds — matches Chess.com default
-    num_lines: int   = 3     # MultiPV  — matches Chess.com default
+    depth:     int = 18   # analysis depth — Chess.com default ~18
+    num_lines: int = 3    # MultiPV lines  — Chess.com default 3
 
 
 class MoveRequest(BaseModel):
     fen:       str
     move_uci:  str
-    move_time: float = 5.0
-    num_lines: int   = 3
+    depth:     int = 18
+    num_lines: int = 3
 
 
 @app.get("/health")
@@ -46,7 +46,7 @@ async def analyze_stream(body: PGNRequest):
     async def gen():
         try:
             async for result in analyzer.analyze_pgn_stream(
-                body.pgn, body.move_time, body.num_lines
+                body.pgn, body.depth, body.num_lines
             ):
                 yield json.dumps(result) + "\n"
         except Exception as e:
@@ -59,6 +59,6 @@ async def analyze_stream(body: PGNRequest):
 async def analyze_move(body: MoveRequest):
     """Single move evaluation for live play."""
     result = await analyzer.analyze_single_move(
-        body.fen, body.move_uci, body.move_time, body.num_lines
+        body.fen, body.move_uci, body.depth, body.num_lines
     )
     return result

@@ -27,6 +27,15 @@ STOCKFISH_PATH = os.environ.get("STOCKFISH_PATH", "/usr/games/stockfish")
 SF_THREADS     = int(os.environ.get("SF_THREADS", "2"))
 SF_HASH        = int(os.environ.get("SF_HASH",    "256"))
 
+# Depth presets — same as Chess.com's speed tiers
+# Chess.com uses depth (not movetime) so simple positions finish instantly
+DEPTH_PRESETS = {
+    "fast":  16,   # ~0.1–0.5s/move  — blitz review
+    "pro":   18,   # ~0.3–1s/move    — Chess.com default
+    "gm":    20,   # ~1–3s/move      — deep review
+    "elite": 22,   # ~3–8s/move      — max accuracy
+}
+
 PV = {
     chess.PAWN: 100, chess.KNIGHT: 305, chess.BISHOP: 333,
     chess.ROOK: 563, chess.QUEEN:  950, chess.KING:  20000,
@@ -128,10 +137,13 @@ class ChessAnalyzer:
         return self._engine
 
     async def _analyse(self, engine, board: chess.Board,
-                       move_time: float, num_lines: int) -> tuple:
-        # move_time=0 means unlimited — use deep fixed depth instead
-        limit = chess.engine.Limit(depth=28) if move_time == 0 \
-                else chess.engine.Limit(time=move_time)
+                       depth: int, num_lines: int) -> tuple:
+        """
+        Depth-based analysis — stops as soon as target depth is reached.
+        This is how Chess.com works: fast on simple positions, thorough
+        on complex ones, without wasting time on forced moves.
+        """
+        limit   = chess.engine.Limit(depth=depth)
         results = await engine.analyse(board, limit, multipv=num_lines)
         if not isinstance(results, list):
             results = [results]
@@ -141,7 +153,7 @@ class ChessAnalyzer:
         return mpv_scores[0] if mpv_scores else 0.0, mpv_scores, best_uci
 
     async def analyze_pgn_stream(self, pgn_text: str,
-                                  move_time: float = 5.0,
+                                  depth: int = 18,
                                   num_lines: int = 3) -> AsyncIterator[dict]:
         engine = await self._get_engine()
         game   = chess.pgn.read_game(io.StringIO(pgn_text))
@@ -159,12 +171,12 @@ class ChessAnalyzer:
 
             # Analyse BEFORE — get MultiPV scores + best_uci
             eval_before, mpv_scores, best_uci = await self._analyse(
-                engine, board, move_time, num_lines)
+                engine, board, depth, num_lines)
 
             board.push(move)
 
             # Analyse AFTER — single line is enough
-            eval_after, _, _ = await self._analyse(engine, board, move_time, 1)
+            eval_after, _, _ = await self._analyse(engine, board, depth, 1)
 
             rating = classify(board_before, move, san,
                               eval_before, eval_after, best_uci, mpv_scores)
@@ -182,7 +194,7 @@ class ChessAnalyzer:
             await asyncio.sleep(0)
 
     async def analyze_single_move(self, fen: str, move_uci: str,
-                                   move_time: float = 5.0,
+                                   depth: int = 18,
                                    num_lines: int = 3) -> dict:
         engine       = await self._get_engine()
         board        = chess.Board(fen)
@@ -191,10 +203,10 @@ class ChessAnalyzer:
         san          = board.san(move)
 
         eval_before, mpv_scores, best_uci = await self._analyse(
-            engine, board, move_time, num_lines)
+            engine, board, depth, num_lines)
 
         board.push(move)
-        eval_after, _, _ = await self._analyse(engine, board, move_time, 1)
+        eval_after, _, _ = await self._analyse(engine, board, depth, 1)
 
         rating = classify(board_before, move, san,
                           eval_before, eval_after, best_uci, mpv_scores)

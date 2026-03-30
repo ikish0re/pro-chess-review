@@ -157,16 +157,14 @@
         </div>
 
         <div style="margin-top:15px;display:flex;flex-direction:column;gap:10px;">
-            <!-- Maximum Time — matches Chess.com options -->
+            <!-- Analysis Depth — depth-based like Chess.com: finishes fast on simple positions -->
             <div style="display:flex;align-items:center;gap:10px;">
-                <label style="color:#aaa;font-size:13px;white-space:nowrap;width:110px;">Maximum Time</label>
-                <select id="moveTime" class="depth-select" style="margin-top:0;flex:1;">
-                    <option value="3">3 sec</option>
-                    <option value="5" selected>5 sec</option>
-                    <option value="10">10 sec</option>
-                    <option value="20">20 sec</option>
-                    <option value="30">30 sec</option>
-                    <option value="0">Unlimited</option>
+                <label style="color:#aaa;font-size:13px;white-space:nowrap;width:110px;">Analysis Depth</label>
+                <select id="depthSel" class="depth-select" style="margin-top:0;flex:1;">
+                    <option value="14">⚡ Fast  — depth 14</option>
+                    <option value="16">🧠 Pro   — depth 16</option>
+                    <option value="18" selected>🏆 GM    — depth 18</option>
+                    <option value="20">👑 Elite — depth 20</option>
                 </select>
             </div>
             <!-- Number of Lines — matches Chess.com options -->
@@ -327,7 +325,7 @@ $(document).ready(function () {
     window.startAnalysis = async function() {
         var pgn = $("#p-api").hasClass("active") ? selPgn : $("#pgnInput").val().trim();
         if(!pgn) return alert("Select a game or paste a PGN first.");
-        var move_time = parseFloat($("#moveTime").val());
+        var depth = parseInt($("#depthSel").val());
         var num_lines = parseInt($("#numLines").val());
 
         // Detect user color
@@ -344,7 +342,7 @@ $(document).ready(function () {
             var resp = await fetch(`${window.API}/analyze/stream`, {
                 method:"POST",
                 headers:{"Content-Type":"application/json"},
-                body: JSON.stringify({pgn, move_time, num_lines})
+                body: JSON.stringify({pgn, depth, num_lines})
             });
             if(!resp.ok) throw new Error("Server error "+resp.status);
 
@@ -419,13 +417,13 @@ $(document).ready(function () {
         aMoves.push({san:move.san,to:move.to,rating:{id:"…",class:"c-pending",text:"Analyzing…",acc:0},eval:0});
         $("#exitVarBtn").show(); updateNavH(); buildRib(); jump(cIdx);
 
-        var move_time=parseFloat($("#moveTime").val()||"5");
+        var depth=parseInt($("#depthSel").val()||"18");
         var num_lines=parseInt($("#numLines").val()||"3");
         try {
             var resp=await fetch(`${window.API}/analyze/move`,{
                 method:"POST",
                 headers:{"Content-Type":"application/json"},
-                body:JSON.stringify({fen:preFen, move_uci:move.from+move.to, move_time, num_lines})
+                body:JSON.stringify({fen:preFen, move_uci:move.from+move.to, depth, num_lines})
             });
             var d=await resp.json();
             aMoves[cIdx].rating=d.classification;
